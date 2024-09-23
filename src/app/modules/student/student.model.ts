@@ -1,12 +1,16 @@
 import { model, Schema } from "mongoose";
 import {
-  Guardian,
-  LocalGuardian,
-  Student,
-  UserName,
+  StudentModel,
+  TGuardian,
+  TLocalGuardian,
+  TStudent,
+  TUserName,
 } from "./student.interface";
 
-const userNameSchema = new Schema<UserName>({
+import bcrypt from "bcrypt";
+import config from "../../config";
+
+const userNameSchema = new Schema<TUserName>({
   firstName: {
     type: String,
     required: [true, "First name is required"],
@@ -24,7 +28,7 @@ const userNameSchema = new Schema<UserName>({
   },
 });
 
-const guardianSchema = new Schema<Guardian>({
+const guardianSchema = new Schema<TGuardian>({
   fatherName: {
     type: String,
     trim: true,
@@ -58,7 +62,7 @@ const guardianSchema = new Schema<Guardian>({
   },
 });
 
-const localGuardianSchema = new Schema<LocalGuardian>({
+const localGuardianSchema = new Schema<TLocalGuardian>({
   name: {
     type: String,
     trim: true,
@@ -81,11 +85,15 @@ const localGuardianSchema = new Schema<LocalGuardian>({
   },
 });
 
-const studentSchema = new Schema<Student>({
+const studentSchema = new Schema<TStudent, StudentModel>({
   id: {
     type: String,
     required: [true, "Student ID is required"],
     unique: true,
+  },
+  password: {
+    type: String,
+    required: [true, "password  is required"],
   },
   name: {
     type: userNameSchema,
@@ -155,6 +163,38 @@ const studentSchema = new Schema<Student>({
     enum: ["active", "blocked"],
     default: "active",
   },
+  isDeleted: {
+    type: Boolean,
+    default: false,
+  },
 });
 
-export const StudentModel = model<Student>("Student", studentSchema);
+// creating custom statics
+
+studentSchema.pre("save", async function (next) {
+  // hassing password and save into db
+  // eslint-disable-next-line @typescript-eslint/no-this-alias
+  const user = this;
+  user.password = await bcrypt.hash(
+    user.password,
+    Number(config.bcrypt_salt_rounds)
+  );
+  next();
+});
+
+studentSchema.post("save", async function (doc, next) {
+  doc.password = "";
+  next();
+});
+
+// query mddleware
+studentSchema.pre("find", function (next) {
+  next();
+});
+
+studentSchema.statics.isUserExists = async function (id: string) {
+  const existingUser = await Student.findOne({ id });
+  return existingUser;
+};
+
+export const Student = model<TStudent, StudentModel>("Student", studentSchema);
