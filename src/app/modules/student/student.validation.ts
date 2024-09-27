@@ -25,30 +25,32 @@ const localGuardianValidationSchema = z.object({
   address: z.string().trim().min(1),
 });
 
-const studentValidationSchema = z.object({
-  id: z.string().min(6),
-  password: z.string().max(20),
-  name: userNameValidationSchema,
-  gender: z.enum(["male", "female"]),
-  dateOfBirth: z.string(),
-  email: z.string().trim().email("Valid email is required"),
-  contactNo: z
-    .string()
-    .trim()
-    .min(8, "Contact Min 8 chrt")
-    .max(15, "Contact Min 15 chrt"),
-  emergencyContactNo: z
-    .string()
-    .trim()
-    .min(8, "Contact Min 8 chrt")
-    .max(15, "Contact Min 15 chrt"),
-  bloodGroup: z.enum(["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]),
-  presentAddress: z.string().trim(),
-  permanentAddress: z.string().trim(),
-  guardian: guardianValidationSchema,
-  localGuardian: localGuardianValidationSchema,
-  profileImg: z.string().trim().optional(),
-  isActive: z.enum(["active", "blocked"]).default("active"),
+const createStudentValidationSchema = z.object({
+  body: z.object({
+    password: z.string().max(20),
+    student: z.object({
+      name: userNameValidationSchema,
+      gender: z.enum(["male", "female"]),
+      dateOfBirth: z.string(),
+      email: z.string().trim().email("Valid email is required"),
+      contactNo: z
+        .string()
+        .trim()
+        .min(8, "Contact Min 8 chrt")
+        .max(15, "Contact Min 15 chrt"),
+      emergencyContactNo: z
+        .string()
+        .trim()
+        .min(8, "Contact Min 8 chrt")
+        .max(15, "Contact Min 15 chrt"),
+      bloodGroup: z.enum(["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]),
+      presentAddress: z.string().trim(),
+      permanentAddress: z.string().trim(),
+      guardian: guardianValidationSchema,
+      localGuardian: localGuardianValidationSchema,
+      profileImg: z.string().trim().optional(),
+    }),
+  }),
 });
 
-export default studentValidationSchema;
+export default createStudentValidationSchema;
