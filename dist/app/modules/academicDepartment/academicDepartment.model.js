@@ -12,51 +12,43 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AcademicSemester = void 0;
+exports.AcademicDepartment = void 0;
 const mongoose_1 = require("mongoose");
-const academicSemester_constant_1 = require("./academicSemester.constant");
 const AppError_1 = __importDefault(require("../../errors/AppError"));
 const http_status_1 = __importDefault(require("http-status"));
-const academicSemesterSchema = new mongoose_1.Schema({
+const academicDepartmentSchema = new mongoose_1.Schema({
     name: {
         type: String,
         required: true,
-        enum: academicSemester_constant_1.AcademicSemesterName,
+        unique: true,
     },
-    code: {
-        type: String,
-        required: true,
-        enum: academicSemester_constant_1.AcademicSemesterCode,
-    },
-    year: {
-        type: String,
-        required: true,
-    },
-    startMonth: {
-        type: String,
-        required: true,
-        enum: academicSemester_constant_1.Months,
-    },
-    endMonth: {
-        type: String,
-        required: true,
-        enum: academicSemester_constant_1.Months,
+    academicfaculty: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: "AcademicFaculty",
     },
 }, {
     timestamps: true,
 });
-academicSemesterSchema.pre("save", function (next) {
+academicDepartmentSchema.pre("save", function (next) {
     return __awaiter(this, void 0, void 0, function* () {
-        const isSemesterExist = yield exports.AcademicSemester.findOne({
+        const isDepartmentAlreadyExist = yield exports.AcademicDepartment.findOne({
             name: this.name,
-            year: this.year,
         });
-        if (isSemesterExist) {
-            throw new AppError_1.default(http_status_1.default.CONFLICT, "Semester Is Already Exist");
+        if (isDepartmentAlreadyExist) {
+            throw new AppError_1.default(http_status_1.default.CONFLICT, "This department is already exist");
         }
-        else {
-            next();
-        }
+        next();
     });
 });
-exports.AcademicSemester = (0, mongoose_1.model)("AcademicSemester", academicSemesterSchema);
+// query middleware
+academicDepartmentSchema.pre("findOneAndUpdate", function (next) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const query = this.getQuery();
+        const isDepartmentAlreadyExist = yield exports.AcademicDepartment.findOne(query);
+        if (!isDepartmentAlreadyExist) {
+            throw new AppError_1.default(http_status_1.default.NOT_FOUND, "Department id not found !!");
+        }
+        next();
+    });
+});
+exports.AcademicDepartment = (0, mongoose_1.model)("AcademicDepartment", academicDepartmentSchema);

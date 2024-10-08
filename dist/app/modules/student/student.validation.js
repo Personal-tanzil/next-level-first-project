@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.studentValidationSchema = void 0;
 const zod_1 = require("zod");
 const userNameValidationSchema = zod_1.z.object({
     firstName: zod_1.z
@@ -47,8 +48,44 @@ const createStudentValidationSchema = zod_1.z.object({
             guardian: guardianValidationSchema,
             localGuardian: localGuardianValidationSchema,
             admissionSemester: zod_1.z.string(),
+            academicDepartment: zod_1.z.string(),
             profileImg: zod_1.z.string().trim().optional(),
         }),
     }),
 });
-exports.default = createStudentValidationSchema;
+const updateStudentValidationSchema = zod_1.z.object({
+    body: zod_1.z.object({
+        student: zod_1.z.object({
+            name: userNameValidationSchema,
+            gender: zod_1.z.enum(["male", "female"]).optional(),
+            dateOfBirth: zod_1.z.string().optional().optional(),
+            email: zod_1.z.string().trim().email("Valid email is required").optional(),
+            contactNo: zod_1.z
+                .string()
+                .trim()
+                .min(8, "Contact Min 8 chrt")
+                .max(15, "Contact Min 15 chrt")
+                .optional(),
+            emergencyContactNo: zod_1.z
+                .string()
+                .trim()
+                .min(8, "Contact Min 8 chrt")
+                .max(15, "Contact Min 15 chrt")
+                .optional(),
+            bloodGroup: zod_1.z
+                .enum(["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"])
+                .optional(),
+            presentAddress: zod_1.z.string().trim().optional(),
+            permanentAddress: zod_1.z.string().trim().optional(),
+            guardian: guardianValidationSchema.optional(),
+            localGuardian: localGuardianValidationSchema.optional(),
+            admissionSemester: zod_1.z.string().optional(),
+            academicDepartment: zod_1.z.string().optional(),
+            profileImg: zod_1.z.string().trim().optional(),
+        }),
+    }),
+});
+exports.studentValidationSchema = {
+    createStudentValidationSchema,
+    updateStudentValidationSchema,
+};

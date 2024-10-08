@@ -18,6 +18,9 @@ const academicSemester_model_1 = require("../academicSemester/academicSemester.m
 const student_model_1 = require("../student/student.model");
 const user_model_1 = require("./user.model");
 const user_utils_1 = __importDefault(require("./user.utils"));
+const AppError_1 = __importDefault(require("../../errors/AppError"));
+const http_status_1 = __importDefault(require("http-status"));
+const mongoose_1 = __importDefault(require("mongoose"));
 const createStudentIntoDB = (password, payload) => __awaiter(void 0, void 0, void 0, function* () {
     // create a user object
     const userData = {};
@@ -29,15 +32,30 @@ const createStudentIntoDB = (password, payload) => __awaiter(void 0, void 0, voi
     const academicSemester = yield academicSemester_model_1.AcademicSemester.findById(payload.admissionSemester);
     // set userid dynamicly
     userData.id = yield (0, user_utils_1.default)(academicSemester);
-    const newUser = yield user_model_1.User.create(userData);
-    //   create student
-    if (Object.keys(newUser).length) {
-        payload.id = newUser.id;
-        payload.user = newUser._id; // reference id
-        const newStudent = yield student_model_1.Student.create(payload);
+    const session = yield mongoose_1.default.startSession();
+    try {
+        session.startTransaction();
+        const newUser = yield user_model_1.User.create([userData], { session });
+        //   create student
+        if (!newUser.length) {
+            throw new AppError_1.default(http_status_1.default.BAD_REQUEST, "Faield To Create User");
+        }
+        payload.id = newUser[0].id;
+        payload.user = newUser[0]._id; // reference id
+        const newStudent = yield student_model_1.Student.create([payload], { session });
+        if (!newStudent.length) {
+            throw new AppError_1.default(http_status_1.default.BAD_REQUEST, "Faield To Create Student");
+        }
+        yield session.commitTransaction();
+        yield session.endSession();
         return newStudent;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
     }
-    return newUser;
+    catch (err) {
+        yield session.abortTransaction();
+        yield session.endSession();
+        throw new AppError_1.default(http_status_1.default.BAD_REQUEST, "Faield To Create Student");
+    }
 });
 exports.UserService = {
     createStudentIntoDB,
